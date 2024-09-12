@@ -1,65 +1,46 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy ASP.Net Core app to Azure Web App - profrafael
+name: Deploy ASP.NET Core app to Azure Web App
 
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - main  # Define que o deploy será realizado no branch 'main'
 
 jobs:
-  build:
-    runs-on: windows-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest  # Utiliza um agente Ubuntu para executar a ação
 
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v2  # Faz o checkout do código do repositório
 
-      - name: Set up .NET Core
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '6.0.x'
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1  # Instala o .NET SDK
+      with:
+        dotnet-version: '7.x'  # Especifica a versão do .NET
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+    - name: Restore dependencies
+      run: dotnet restore ./YourProjectFolder/YourProject.csproj  # Restaura as dependências do projeto
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+    - name: Build
+      run: dotnet build ./YourProjectFolder/YourProject.csproj --configuration Release --no-restore  # Constrói o projeto com a configuração Release
 
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+    - name: Publish
+      run: dotnet publish ./YourProjectFolder/YourProject.csproj --configuration Release --output ./publish  # Publica os arquivos no diretório ./publish
 
-  deploy:
-    runs-on: windows-latest
-    needs: build
-    environment:
-      name: 'Development'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v4  # Faz upload dos arquivos publicados como artefato
+      with:
+        name: .net-app
+        path: ./publish
 
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: .net-app
-      
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_CDB73CA8F7D046CFA9E681D08BB7C560 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B66CCBB1C2C844348673ABA0E1A7AC6A }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_0098DE6EDF1A420D88FA499EE3430765 }}
+    - name: Download artifact
+      uses: actions/download-artifact@v2  # Faz o download do artefato para o próximo job
+      with:
+        name: .net-app
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'profrafael'
-          slot-name: 'Development'
-          package: .
-          
+    - name: 'Deploy to Azure WebApp'
+      uses: azure/webapps-deploy@v2  # Usa a ação de deploy para Azure Web Apps
+      with:
+        app-name: 'your-app-service-name'  # Nome do seu App Service no Azure
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}  # Publish profile configurado nos secrets
+        package: './publish'  # Diretório de onde será feito o deploy
