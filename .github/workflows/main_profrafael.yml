@@ -28,13 +28,13 @@ jobs:
       run: dotnet publish ./YourProjectFolder/YourProject.csproj --configuration Release --output ./publish  # Publica os arquivos no diretório ./publish
 
     - name: Upload artifact for deployment job
-      uses: actions/upload-artifact@v4  # Faz upload dos arquivos publicados como artefato
+      uses: actions/upload-artifact@v3  # Atualizado para a versão v3
       with:
         name: .net-app
         path: ./publish
 
     - name: Download artifact
-      uses: actions/download-artifact@v2  # Faz o download do artefato para o próximo job
+      uses: actions/download-artifact@v3  # Atualizado para a versão v3
       with:
         name: .net-app
 
